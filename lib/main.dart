@@ -30,10 +30,19 @@ class ResilientGridApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
+    final themeMode = ref.watch(themeModeProvider);
+
+    // Keep the dynamic theme helper isDark state synchronized
+    final brightness = themeMode == ThemeMode.system
+        ? MediaQuery.platformBrightnessOf(context)
+        : (themeMode == ThemeMode.dark ? Brightness.dark : Brightness.light);
+    AppTheme.isDark = (brightness == Brightness.dark);
 
     return MaterialApp.router(
       title: 'ResilientGrid AI',
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

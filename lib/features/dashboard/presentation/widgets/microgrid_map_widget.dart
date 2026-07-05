@@ -47,10 +47,10 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
     return telemetryAsync.when(
       data: (data) => _buildMapLayout(data),
       loading: () =>
-          const Center(child: CircularProgressIndicator(color: AppTheme.kombuGreen)),
+          Center(child: CircularProgressIndicator(color: AppTheme.kombuGreen)),
       error: (e, s) => Center(
           child: Text('Error loading map metrics: $e',
-              style: const TextStyle(color: AppTheme.cafeNoir))),
+              style: TextStyle(color: AppTheme.cafeNoir))),
     );
   }
 
@@ -179,7 +179,7 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
                                 painter: _InfoIconPainter(),
                               ),
                               const SizedBox(width: 8),
-                              const Text(
+                              Text(
                                 'Interactive Schematic — Click any node',
                                 style: TextStyle(
                                   color: AppTheme.kombuGreen,
@@ -210,7 +210,7 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
       onTap: () => setState(() => _selectedNode = _selectedNode == 'AI Hub' ? null : 'AI Hub'),
       child: AnimatedBuilder(
         animation: _animationController,
-        builder: (_, __) => SizedBox(
+        builder: (context, child) => SizedBox(
           width: 104,
           height: 104,
           child: Stack(
@@ -305,7 +305,7 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
               ),
               const SizedBox(height: 6),
               Text(label,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.cafeNoir)),
               const SizedBox(height: 3),
               Container(
@@ -358,7 +358,7 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Node Inspector',
+                  Text('Node Inspector',
                       style: TextStyle(
                           color: AppTheme.cafeNoir,
                           fontWeight: FontWeight.bold,
@@ -445,11 +445,11 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
         controls = Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Simulate Grid Failure (Blackout)',
+            Text('Simulate Grid Failure (Blackout)',
                 style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.cafeNoir, fontSize: 13)),
             Switch(
               value: data.gridStatus == 'Critical',
-              activeColor: AppTheme.cafeNoir,
+              activeThumbColor: AppTheme.cafeNoir,
               onChanged: (val) => _sendSocketMessage({"scenario": val ? "Grid Failure" : "Normal"}),
             ),
           ],
@@ -468,7 +468,7 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
         controls = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Manual Battery SoC Override',
+            Text('Manual Battery SoC Override',
                 style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.cafeNoir, fontSize: 13)),
             const SizedBox(height: 8),
             Row(
@@ -490,7 +490,7 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
                     border: Border.all(color: AppTheme.mossGreen.withValues(alpha: 0.3)),
                   ),
                   child: Text('${data.batteryPercent}%',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.cafeNoir, fontSize: 12)),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.cafeNoir, fontSize: 12)),
                 ),
               ],
             ),
@@ -525,17 +525,21 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
         controls = Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Admin Block Connected State',
+            Text('Admin Block Connected State',
                 style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.cafeNoir, fontSize: 13)),
             Switch(
               value: data.adminBlockOnline,
-              activeColor: AppTheme.mossGreen,
+              activeThumbColor: AppTheme.mossGreen,
               onChanged: (val) => _sendSocketMessage({"type": "toggle_admin", "online": val}),
             ),
           ],
         );
         break;
     }
+
+    // The production dashboard is deliberately read-only. Measurements are
+    // accepted only from the telemetry gateway, never fabricated in the UI.
+    controls = null;
 
     return PremiumCard(
       padding: const EdgeInsets.all(18),
@@ -616,7 +620,7 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
           children: [
             Expanded(
               child: Text(label,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontWeight: FontWeight.bold, color: AppTheme.cafeNoir, fontSize: 13)),
             ),
             Row(
@@ -628,7 +632,7 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
                 const SizedBox(width: 6),
                 Switch(
                   value: isOverride,
-                  activeColor: AppTheme.mossGreen,
+                  activeThumbColor: AppTheme.mossGreen,
                   onChanged: onToggle,
                 ),
               ],
@@ -655,7 +659,7 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
                   border: Border.all(color: AppTheme.mossGreen.withValues(alpha: 0.3)),
                 ),
                 child: Text('${value.round()} kW',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.bold, color: AppTheme.cafeNoir, fontSize: 12)),
               ),
             ],
@@ -675,7 +679,7 @@ class _MicrogridMapWidgetState extends ConsumerState<MicrogridMapWidget>
                   color: AppTheme.kombuGreen.withValues(alpha: 0.55), fontSize: 11)),
           const SizedBox(height: 2),
           Text(value,
-              style: const TextStyle(
+              style: TextStyle(
                   color: AppTheme.cafeNoir, fontWeight: FontWeight.bold, fontSize: 13)),
         ],
       ),

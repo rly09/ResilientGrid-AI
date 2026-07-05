@@ -46,7 +46,7 @@ class _AiCommandCenterLogState extends ConsumerState<AiCommandCenterLog>
             children: [
               AnimatedBuilder(
                 animation: _brainCtrl,
-                builder: (_, __) => Container(
+                builder: (context, child) => Container(
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
@@ -156,9 +156,9 @@ class _AiCommandCenterLogState extends ConsumerState<AiCommandCenterLog>
                 }
               },
               loading: () =>
-                  const Center(child: CircularProgressIndicator(color: AppTheme.mossGreen)),
+                  Center(child: CircularProgressIndicator(color: AppTheme.mossGreen)),
               error: (e, s) =>
-                  const Text('Error loading AI logs', style: TextStyle(color: AppTheme.cafeNoir)),
+                  Text('Error loading AI logs', style: TextStyle(color: AppTheme.cafeNoir)),
             ),
           ),
         ],
@@ -169,7 +169,7 @@ class _AiCommandCenterLogState extends ConsumerState<AiCommandCenterLog>
   Widget _buildLogList(List<_LogEntry> entries) {
     return ListView.separated(
       itemCount: entries.length,
-      separatorBuilder: (_, __) =>
+      separatorBuilder: (context, index) =>
           Container(height: 1, margin: const EdgeInsets.symmetric(vertical: 6), color: AppTheme.tan.withValues(alpha: 0.2)),
       itemBuilder: (context, i) {
         final entry = entries[i];

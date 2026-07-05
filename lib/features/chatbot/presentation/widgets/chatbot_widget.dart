@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend/core/theme/app_theme.dart';
+import 'package:frontend/features/dashboard/data/telemetry_provider.dart';
 
 class ChatbotWidget extends StatefulWidget {
   const ChatbotWidget({super.key});
@@ -12,8 +13,21 @@ class ChatbotWidget extends StatefulWidget {
 
 class _ChatbotWidgetState extends State<ChatbotWidget> {
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
+  }
 
   Future<void> _sendMessage() async {
     if (_controller.text.isEmpty) return;
@@ -24,10 +38,11 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
       _isLoading = true;
     });
     _controller.clear();
+    _scrollToBottom();
 
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/chat'),
+        Uri.parse('$backendUrl/api/chat'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({"message": userMessage}),
       );
@@ -50,7 +65,15 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
       setState(() {
         _isLoading = false;
       });
+      _scrollToBottom();
     }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -81,12 +104,12 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.spa, color: AppTheme.mossGreen),
+                Icon(Icons.spa, color: AppTheme.mossGreen),
                 const SizedBox(width: 8),
-                Text('AI Wellness Assistant', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 20)),
+                Text('Live Grid Assistant', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 20)),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close, color: AppTheme.kombuGreen),
+                  icon: Icon(Icons.close, color: AppTheme.kombuGreen),
                   onPressed: () => Navigator.of(context).pop(),
                 )
               ],
@@ -94,6 +117,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
           ),
           Expanded(
             child: ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
@@ -115,7 +139,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
               },
             ),
           ),
-          if (_isLoading) const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(color: AppTheme.mossGreen)),
+          if (_isLoading) Padding(padding: const EdgeInsets.all(8.0), child: CircularProgressIndicator(color: AppTheme.mossGreen)),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -123,21 +147,21 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    style: const TextStyle(color: AppTheme.kombuGreen),
+                    style: TextStyle(color: AppTheme.kombuGreen),
                     decoration: InputDecoration(
                       hintText: 'Ask the AI...',
                       hintStyle: TextStyle(color: AppTheme.kombuGreen.withValues(alpha: 0.5)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppTheme.tan),
+                        borderSide: BorderSide(color: AppTheme.tan),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppTheme.tan),
+                        borderSide: BorderSide(color: AppTheme.tan),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppTheme.mossGreen),
+                        borderSide: BorderSide(color: AppTheme.mossGreen),
                       ),
                     ),
                     onSubmitted: (_) => _sendMessage(),
@@ -145,7 +169,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  icon: const Icon(Icons.send, color: AppTheme.mossGreen),
+                  icon: Icon(Icons.send, color: AppTheme.mossGreen),
                   onPressed: _sendMessage,
                 ),
               ],

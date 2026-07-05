@@ -5,7 +5,6 @@ import 'package:frontend/features/dashboard/data/telemetry_provider.dart';
 import 'package:frontend/core/models/telemetry_model.dart';
 import 'package:frontend/core/theme/app_theme.dart';
 import 'package:frontend/core/widgets/custom_icons.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 class LiveStatusPanel extends ConsumerStatefulWidget {
   const LiveStatusPanel({super.key});
@@ -33,10 +32,9 @@ class _LiveStatusPanelState extends ConsumerState<LiveStatusPanel>
     super.dispose();
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     final telemetryAsync = ref.watch(telemetryProvider);
-    final historyAsync = ref.watch(telemetryHistoryProvider);
 
     return PremiumCard(
       padding: const EdgeInsets.all(18),
@@ -68,7 +66,7 @@ class _LiveStatusPanelState extends ConsumerState<LiveStatusPanel>
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                           color: color.withValues(
-                              alpha: 0.2 + 0.15 * _pulseController.value)),
+                                  alpha: 0.2 + 0.15 * _pulseController.value)),
                     ),
                     child: Row(
                       children: [
@@ -109,10 +107,9 @@ class _LiveStatusPanelState extends ConsumerState<LiveStatusPanel>
 
           // Stat grid
           Expanded(
-            flex: 6,
             child: telemetryAsync.when(
               data: (data) => _buildTelemetryGrid(data, context),
-              loading: () => const Center(
+              loading: () => Center(
                   child:
                       CircularProgressIndicator(color: AppTheme.mossGreen)),
               error: (error, stack) => Center(
@@ -125,29 +122,6 @@ class _LiveStatusPanelState extends ConsumerState<LiveStatusPanel>
               ),
             ),
           ),
-
-          // Thin divider
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Container(
-                height: 1,
-                color: AppTheme.tan.withValues(alpha: 0.4)),
-          ),
-
-          // Mini chart
-          Expanded(
-            flex: 3,
-            child: historyAsync.when(
-              data: (history) => _buildLiveChart(history),
-              loading: () => const Center(
-                  child: SizedBox(
-                      height: 20,
-                      width: 20,
-                      child:
-                          CircularProgressIndicator(strokeWidth: 2))),
-              error: (e, s) => const SizedBox.shrink(),
-            ),
-          ),
         ],
       ),
     );
@@ -157,7 +131,7 @@ class _LiveStatusPanelState extends ConsumerState<LiveStatusPanel>
     return GridView.count(
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 3,
-      childAspectRatio: 1.35,
+      childAspectRatio: 1.15,
       mainAxisSpacing: 10,
       crossAxisSpacing: 10,
       children: [
@@ -350,59 +324,6 @@ class _LiveStatusPanelState extends ConsumerState<LiveStatusPanel>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildLiveChart(List<TelemetryModel> history) {
-    if (history.isEmpty) return const SizedBox.shrink();
-
-    final recent =
-        history.length > 20 ? history.sublist(history.length - 20) : history;
-    final spots = <FlSpot>[];
-    for (int i = 0; i < recent.length; i++) {
-      spots.add(FlSpot(i.toDouble(), recent[i].loadKw.toDouble()));
-    }
-
-    final currentStatus = recent.last.gridStatus;
-    final chartColor = _getStatusColor(currentStatus);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Load Demand Trend',
-          style: TextStyle(
-            color: AppTheme.kombuGreen.withValues(alpha: 0.55),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.4,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Expanded(
-          child: LineChart(
-            LineChartData(
-              gridData: const FlGridData(show: false),
-              titlesData: const FlTitlesData(show: false),
-              borderData: FlBorderData(show: false),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: spots,
-                  isCurved: true,
-                  color: chartColor,
-                  barWidth: 2,
-                  isStrokeCapRound: true,
-                  dotData: const FlDotData(show: false),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    color: chartColor.withValues(alpha: 0.08),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

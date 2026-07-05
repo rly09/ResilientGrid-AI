@@ -10,11 +10,15 @@ class TelemetryModel {
   final Map<String, dynamic> weather;
   final bool adminBlockOnline;
   final double minBatterySoc;
+  final double criticalFrequencyHz;
   final bool autoIslanding;
   final bool peakShaving;
+  final bool dynamicLoadShedding;
   final int? solarOverride;
   final int? windOverride;
   final int? loadOverride;
+  final String source;
+  final DateTime? timestamp;
 
   TelemetryModel({
     required this.gridStatus,
@@ -28,11 +32,15 @@ class TelemetryModel {
     required this.weather,
     required this.adminBlockOnline,
     required this.minBatterySoc,
+    required this.criticalFrequencyHz,
     required this.autoIslanding,
     required this.peakShaving,
+    required this.dynamicLoadShedding,
     this.solarOverride,
     this.windOverride,
     this.loadOverride,
+    required this.source,
+    this.timestamp,
   });
 
   factory TelemetryModel.fromJson(Map<String, dynamic> json) {
@@ -52,11 +60,15 @@ class TelemetryModel {
       },
       adminBlockOnline: json['admin_block_online'] as bool? ?? true,
       minBatterySoc: (json['min_battery_soc'] as num? ?? 30.0).toDouble(),
+      criticalFrequencyHz: (json['critical_frequency_hz'] as num? ?? 49.5).toDouble(),
       autoIslanding: json['auto_islanding'] as bool? ?? true,
       peakShaving: json['peak_shaving'] as bool? ?? true,
+      dynamicLoadShedding: json['dynamic_load_shedding'] as bool? ?? true,
       solarOverride: json['solar_override'] as int?,
       windOverride: json['wind_override'] as int?,
       loadOverride: json['load_override'] as int?,
+      source: json['source'] as String? ?? 'unknown',
+      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? ''),
     );
   }
 
@@ -77,11 +89,15 @@ class TelemetryModel {
       },
       adminBlockOnline: true,
       minBatterySoc: 30.0,
+      criticalFrequencyHz: 49.5,
       autoIslanding: true,
       peakShaving: true,
+      dynamicLoadShedding: true,
       solarOverride: null,
       windOverride: null,
       loadOverride: null,
+      source: 'waiting',
+      timestamp: null,
     );
   }
 }

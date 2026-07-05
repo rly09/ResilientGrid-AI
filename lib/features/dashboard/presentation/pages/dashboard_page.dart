@@ -6,12 +6,13 @@ import 'package:frontend/features/shared/widgets/premium_card.dart';
 import 'package:frontend/features/dashboard/presentation/widgets/digital_twin_widget.dart';
 import 'package:frontend/features/dashboard/presentation/widgets/live_status_panel.dart';
 import 'package:frontend/features/dashboard/presentation/widgets/ai_command_center_log.dart';
-import 'package:frontend/features/simulator/presentation/widgets/scenario_dialog.dart';
 import 'package:frontend/features/chatbot/presentation/widgets/chatbot_widget.dart';
+import 'package:frontend/features/simulator/presentation/widgets/scenario_dialog.dart';
 import 'package:frontend/features/dashboard/presentation/widgets/navigation_provider.dart';
 import 'package:frontend/features/dashboard/presentation/widgets/microgrid_map_widget.dart';
 import 'package:frontend/features/dashboard/presentation/widgets/analytics_view.dart';
 import 'package:frontend/features/dashboard/presentation/widgets/settings_view.dart';
+import 'package:frontend/features/dashboard/data/telemetry_provider.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -250,12 +251,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           const SizedBox(height: 12),
           _AnimatedFAB(
             heroTag: 'sim_btn',
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => const ScenarioDialog(),
-              );
-            },
+            onPressed: () => showDialog(
+              context: context,
+              builder: (context) => const ScenarioDialog(),
+            ),
             backgroundColor: AppTheme.cafeNoir,
             icon: const _SimIcon(),
             label: 'Simulator',
@@ -336,10 +335,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
   String _getSubtitle(int tabIndex) {
     switch (tabIndex) {
-      case 0: return 'Real-time microgrid digital twin view';
+      case 0: return 'Real-time microgrid sensor view';
       case 1: return 'Interactive node-level system schematic map';
       case 2: return 'Historical telemetry analytics & trends';
-      case 3: return 'Optimization rules & scenario controls';
+      case 3: return 'Live safety and optimization controls';
       default: return '';
     }
   }
@@ -391,16 +390,19 @@ class _LiveStatusBadgeState extends ConsumerState<_LiveStatusBadge>
 
   @override
   Widget build(BuildContext context) {
+    final telemetry = ref.watch(telemetryProvider);
+    final isLive = telemetry.hasValue;
+    final color = isLive ? AppTheme.mossGreen : AppColors.warning;
     return AnimatedBuilder(
       animation: _pulseCtrl,
       builder: (context, _) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.mossGreen.withValues(alpha: 0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.mossGreen.withValues(alpha: 0.3),
+              color: color.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
@@ -410,10 +412,10 @@ class _LiveStatusBadgeState extends ConsumerState<_LiveStatusBadge>
                 height: 8,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.mossGreen,
+                  color: color,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.mossGreen.withValues(alpha: 0.6 * _pulseCtrl.value),
+                      color: color.withValues(alpha: 0.6 * _pulseCtrl.value),
                       blurRadius: 8 * _pulseCtrl.value,
                       spreadRadius: 2 * _pulseCtrl.value,
                     ),
@@ -422,11 +424,11 @@ class _LiveStatusBadgeState extends ConsumerState<_LiveStatusBadge>
               ),
               const SizedBox(width: 8),
               Text(
-                'LIVE DATA',
+                isLive ? 'LIVE · ${telemetry.value!.source.toUpperCase()}' : 'WAITING FOR SENSOR',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.kombuGreen,
+                  color: color,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -488,7 +490,7 @@ class _AnimatedFABState extends State<_AnimatedFAB> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           icon: widget.icon,
           label: Text(widget.label,
-              style: const TextStyle(
+              style: TextStyle(
                   color: AppTheme.bone,
                   fontWeight: FontWeight.w700,
                   fontSize: 13)),

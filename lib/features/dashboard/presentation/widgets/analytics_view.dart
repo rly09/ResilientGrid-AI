@@ -16,7 +16,7 @@ class AnalyticsView extends ConsumerWidget {
     return historyAsync.when(
       data: (logs) {
         if (logs.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
               'Waiting for telemetry data streams...',
               style: TextStyle(color: AppTheme.kombuGreen, fontSize: 16),
@@ -26,7 +26,7 @@ class AnalyticsView extends ConsumerWidget {
 
         return _buildAnalyticsContent(logs, context);
       },
-      loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.kombuGreen)),
+      loading: () => Center(child: CircularProgressIndicator(color: AppTheme.kombuGreen)),
       error: (e, s) => Center(child: Text('Error: $e')),
     );
   }
@@ -164,7 +164,7 @@ class AnalyticsView extends ConsumerWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.cafeNoir, fontWeight: FontWeight.w600)),
+        Text(label, style: TextStyle(fontSize: 12, color: AppTheme.cafeNoir, fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -327,7 +327,7 @@ class AnalyticsView extends ConsumerWidget {
           headingRowColor: WidgetStateProperty.all(AppTheme.tan.withValues(alpha: 0.15)),
           horizontalMargin: 12,
           columnSpacing: 24,
-          columns: const [
+          columns: [
             DataColumn(label: Text('Metric Time Offset', style: TextStyle(color: AppTheme.cafeNoir, fontWeight: FontWeight.bold))),
             DataColumn(label: Text('Grid Status', style: TextStyle(color: AppTheme.cafeNoir, fontWeight: FontWeight.bold))),
             DataColumn(label: Text('Battery SoC', style: TextStyle(color: AppTheme.cafeNoir, fontWeight: FontWeight.bold))),

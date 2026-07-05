@@ -6,10 +6,11 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:frontend/core/models/telemetry_model.dart';
 
 // ── Backend URL constants ─────────────────────────────────────────────────────
-const String _backendHost = 'localhost';
-const int _backendPort = 8000;
-const String _wsUrl = 'ws://$_backendHost:$_backendPort/ws/telemetry';
-const String _httpUrl = 'http://$_backendHost:$_backendPort';
+const String backendUrl = String.fromEnvironment(
+  'API_URL',
+  defaultValue: 'http://127.0.0.1:8000',
+);
+String get _wsUrl => '${backendUrl.replaceFirst(RegExp(r'^http'), 'ws')}/ws/telemetry';
 
 // ── WebSocket provider (auto-reconnecting) ────────────────────────────────────
 final webSocketProvider = Provider<WebSocketChannel>((ref) {
@@ -65,7 +66,7 @@ class TelemetryHistoryNotifier extends AsyncNotifier<List<TelemetryModel>> {
     List<TelemetryModel> initialLogs = [];
     try {
       final response = await http
-          .get(Uri.parse('$_httpUrl/api/telemetry/history'))
+          .get(Uri.parse('$backendUrl/api/telemetry/history'))
           .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -87,5 +88,38 @@ class TelemetryHistoryNotifier extends AsyncNotifier<List<TelemetryModel>> {
     });
 
     return initialLogs;
+  }
+}
+
+Future<void> updateGridSettings(Map<String, dynamic> values) async {
+  final response = await http.patch(
+    Uri.parse('$backendUrl/api/settings'),
+    headers: const {'Content-Type': 'application/json'},
+    body: jsonEncode(values),
+  ).timeout(const Duration(seconds: 5));
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw StateError('Settings update failed (${response.statusCode})');
+  }
+}
+
+Future<void> updateGridOverrides(Map<String, dynamic> values) async {
+  final response = await http.patch(
+    Uri.parse('$backendUrl/api/override'),
+    headers: const {'Content-Type': 'application/json'},
+    body: jsonEncode(values),
+  ).timeout(const Duration(seconds: 5));
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw StateError('Override update failed (${response.statusCode})');
+  }
+}
+
+Future<void> runGridScenario(String scenario) async {
+  final response = await http.post(
+    Uri.parse('$backendUrl/api/scenario'),
+    headers: const {'Content-Type': 'application/json'},
+    body: jsonEncode({'scenario': scenario}),
+  ).timeout(const Duration(seconds: 5));
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw StateError('Scenario request failed (${response.statusCode})');
   }
 }

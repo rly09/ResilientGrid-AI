@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -274,7 +273,7 @@ class _HintBadgeState extends State<_HintBadge> with SingleTickerProviderStateMi
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) => Container(
+      builder: (context, child) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: AppTheme.bone.withValues(alpha: 0.9),
@@ -297,7 +296,7 @@ class _HintBadgeState extends State<_HintBadge> with SingleTickerProviderStateMi
               painter: _TouchIconPainter(),
             ),
             const SizedBox(width: 7),
-            const Text(
+            Text(
               'Tap any node to adjust parameters live',
               style: TextStyle(
                 color: AppTheme.kombuGreen,
@@ -421,7 +420,7 @@ class _NodeWidgetState extends State<_NodeWidget> with SingleTickerProviderState
               const SizedBox(height: 7),
               Text(
                 widget.label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 11,
                   color: AppTheme.cafeNoir,
@@ -709,9 +708,35 @@ class _NodeControlSheetState extends State<NodeControlSheet> {
     }
   }
 
-  void _sendSocketMessage(Map<String, dynamic> msg) {
-    final channel = widget.ref.read(webSocketProvider);
-    channel.sink.add(jsonEncode(msg));
+  Future<void> _sendSocketMessage(Map<String, dynamic> msg) async {
+    try {
+      if (msg.containsKey('scenario')) {
+        await runGridScenario(msg['scenario'] as String);
+      } else {
+        final params = <String, dynamic>{};
+        final type = msg['type'];
+        
+        if (type == 'override') {
+          if (msg.containsKey('solar')) params['solar'] = msg['solar'];
+          if (msg.containsKey('wind')) params['wind'] = msg['wind'];
+          if (msg.containsKey('load')) params['load'] = msg['load'];
+        } else if (type == 'set_battery') {
+          if (msg.containsKey('battery')) params['battery'] = (msg['battery'] as num?)?.round();
+        } else if (type == 'toggle_admin') {
+          if (msg.containsKey('online')) params['online'] = msg['online'];
+        } else if (msg.containsKey('clear')) {
+          params['clear'] = msg['clear'];
+        }
+
+        await updateGridOverrides(params);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update control: $e')),
+        );
+      }
+    }
   }
 
   CustomPainter _getNodeIcon() {
@@ -729,6 +754,9 @@ class _NodeControlSheetState extends State<NodeControlSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final hasControls = ['Solar Farm', 'Wind Farm', 'External Grid', 'Battery Storage', 'Hospital ICU', 'Admin Block']
+        .contains(widget.nodeName);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
@@ -766,13 +794,63 @@ class _NodeControlSheetState extends State<NodeControlSheet> {
             ],
           ),
           const SizedBox(height: 20),
-          _buildControlContent(),
+          _buildLiveNodeDetails(),
+          if (hasControls) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            _buildControlContentLegacy(),
+            const SizedBox(height: 20),
+            Center(
+              child: TextButton.icon(
+                onPressed: () => _sendSocketMessage({'clear': true}),
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('Reset All Custom Overrides'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.cafeNoir.withValues(alpha: 0.6),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildControlContent() {
+  Widget _buildLiveNodeDetails() {
+    final t = widget.telemetry;
+    final values = <String, String>{
+      'Solar Farm': '${t.solarGenerationKw} kW',
+      'Wind Farm': '${t.windGenerationKw} kW',
+      'External Grid': t.gridStatus,
+      'Battery Storage': '${t.batteryPercent}%',
+      'Hospital ICU': '${t.loadKw} kW total measured load',
+      'Admin Block': t.adminBlockOnline ? 'Connected' : 'Disconnected',
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          values[widget.nodeName] ?? 'Live sensor node',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Read-only live measurement from ${t.source}. Operational values cannot be simulated or overridden from the dashboard.',
+          style: TextStyle(color: AppTheme.kombuGreen.withValues(alpha: .7), height: 1.5),
+        ),
+        if (t.timestamp != null) ...[
+          const SizedBox(height: 12),
+          Text('Last received: ${t.timestamp!.toLocal()}',
+              style: TextStyle(color: AppTheme.kombuGreen.withValues(alpha: .55), fontSize: 12)),
+        ],
+      ],
+    );
+  }
+
+  // ignore: unused_element
+  Widget _buildControlContentLegacy() {
     final t = widget.telemetry;
 
     if (widget.nodeName == 'Solar Farm') {
@@ -935,11 +1013,11 @@ class _NodeControlSheetState extends State<NodeControlSheet> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: const TextStyle(
+            style: TextStyle(
                 fontWeight: FontWeight.bold, color: AppTheme.cafeNoir, fontSize: 14)),
         Switch(
           value: value,
-          activeColor: activeColor,
+          activeThumbColor: activeColor,
           activeTrackColor: activeColor.withValues(alpha: 0.2),
           inactiveThumbColor: AppTheme.tan,
           inactiveTrackColor: AppTheme.tan.withValues(alpha: 0.2),
@@ -984,7 +1062,7 @@ class _NodeControlSheetState extends State<NodeControlSheet> {
           ),
           child: Text(
             '${value.round()} $unit',
-            style: const TextStyle(
+            style: TextStyle(
                 fontWeight: FontWeight.bold, color: AppTheme.cafeNoir, fontSize: 13),
           ),
         ),
